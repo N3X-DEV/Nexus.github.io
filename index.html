@@ -259,14 +259,24 @@
                 document.getElementById('customer-name').value = '';
 
             } catch (error) {
-                console.error('Error sending to Discord:', error);
+                console.error('❌ خطأ في إرسال الطلب:', error);
 
-                // Check if it's a webhook URL issue
+                let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى أو التواصل مع الإدارة.';
+
+                // Check specific error types
                 if (error.message.includes('WEBHOOK_NOT_CONFIGURED')) {
-                    alert('⚠️ لم يتم تكوين webhook الديسكورد بعد.\n\nيرجى التواصل مع الإدارة لإتمام عملية الشراء.');
-                } else {
-                    alert('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى أو التواصل مع الإدارة.');
+                    errorMessage = '⚠️ لم يتم تكوين webhook الديسكورد بعد.\n\nيرجى التواصل مع الإدارة لإتمام عملية الشراء.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage = '❌ مشكلة في الاتصال بالإنترنت.\n\nيرجى التحقق من اتصالك والمحاولة مرة أخرى.';
+                } else if (error.message.includes('404')) {
+                    errorMessage = '❌ رابط Discord Webhook غير صحيح أو محذوف.\n\nيرجى التواصل مع الإدارة لحل المشكلة.';
+                } else if (error.message.includes('401') || error.message.includes('403')) {
+                    errorMessage = '❌ مشكلة في صلاحيات Discord Webhook.\n\nيرجى التواصل مع الإدارة لحل المشكلة.';
+                } else if (error.message.includes('انتهت مهلة الإرسال')) {
+                    errorMessage = '⏰ انتهت مهلة الإرسال.\n\nيرجى التحقق من اتصالك والمحاولة مرة أخرى.';
                 }
+
+                alert(errorMessage);
             } finally {
                 // Reset button state
                 submitBtn.textContent = originalText;
@@ -282,77 +292,107 @@
             // 3. انقر "New Webhook"
             // 4. اختر القناة التي تريد إرسال الرسائل إليها
             // 5. انسخ رابط الـ webhook وضعه هنا
-            const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1400849070246858782/ZPMNflrqeV2DnYYoHmtdL6HX2_0r_ODfh4XOw9wdMx5e0V2ZIzsTh6AZQQDxT6hPNDkX';
+            const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1401476836071964693/U9q_Q7NwgWW--FL8ei6_akJeK_V8OJoiC8BAHrXHISHiHlzMbU0j0xB4u1qCK3T9uq3X';
 
-            // Check if webhook URL is configured (this check is no longer needed since URL is set)
-            // The webhook is now properly configured
+            console.log('🔄 بدء إرسال الطلب إلى Discord...');
+            console.log('📋 بيانات الطلب:', { customerName, itemsList, total, fileName: receiptFile.name });
 
-            // Convert image to base64
-            const base64Image = await fileToBase64(receiptFile);
+            try {
+                // التحقق من صحة الـ webhook URL
+                if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes('YOUR_DISCORD_WEBHOOK_URL_HERE')) {
+                    throw new Error('WEBHOOK_NOT_CONFIGURED');
+                }
 
-            // Create embed for Discord
-            const embed = {
-                title: "🛒 طلب شراء جديد - Nexus City Store",
-                color: 0xb8995f, // Golden color
-                fields: [
-                    {
-                        name: "👤 اسم المشتري",
-                        value: customerName,
-                        inline: true
+                // Create embed for Discord
+                const embed = {
+                    title: "🛒 طلب شراء جديد - Nexus City Store",
+                    color: 0xb8995f, // Golden color
+                    fields: [
+                        {
+                            name: "👤 اسم المشتري",
+                            value: customerName,
+                            inline: true
+                        },
+                        {
+                            name: "💰 المبلغ الإجمالي",
+                            value: `$${total.toLocaleString()}`,
+                            inline: true
+                        },
+                        {
+                            name: "📦 العناصر المطلوبة",
+                            value: itemsList || "لا توجد عناصر",
+                            inline: false
+                        },
+                        {
+                            name: "📅 تاريخ الطلب",
+                            value: new Date().toLocaleString('ar-SA', {
+                                timeZone: 'Asia/Riyadh',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }),
+                            inline: false
+                        }
+                    ],
+                    footer: {
+                        text: "Nexus City CFW Store",
+                        icon_url: "https://l.top4top.io/p_3499xj3mn1.jpg"
                     },
-                    {
-                        name: "💰 المبلغ الإجمالي",
-                        value: `$${total.toLocaleString()}`,
-                        inline: true
-                    },
-                    {
-                        name: "📦 العناصر المطلوبة",
-                        value: itemsList || "لا توجد عناصر",
-                        inline: false
-                    },
-                    {
-                        name: "📅 تاريخ الطلب",
-                        value: new Date().toLocaleString('ar-SA', {
-                            timeZone: 'Asia/Riyadh',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }),
-                        inline: false
-                    }
-                ],
-                footer: {
-                    text: "Nexus City CFW Store",
-                    icon_url: "https://l.top4top.io/p_3499xj3mn1.jpg"
-                },
-                timestamp: new Date().toISOString()
-            };
+                    timestamp: new Date().toISOString()
+                };
 
-            // Create FormData for file upload
-            const formData = new FormData();
+                // Create FormData for file upload
+                const formData = new FormData();
 
-            // Add the receipt image
-            formData.append('files[0]', receiptFile, `receipt_${customerName}_${Date.now()}.${receiptFile.name.split('.').pop()}`);
+                // Add the receipt image with proper filename
+                const fileExtension = receiptFile.name.split('.').pop() || 'jpg';
+                const fileName = `receipt_${customerName.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.${fileExtension}`;
+                formData.append('files[0]', receiptFile, fileName);
 
-            // Add the embed data
-            formData.append('payload_json', JSON.stringify({
-                content: `🔔 **طلب شراء جديد وصل!**\n\n**المشتري:** ${customerName}\n**المبلغ:** $${total.toLocaleString()}\n\n**يرجى مراجعة الإيصال المرفق والتواصل مع المشتري.**`,
-                embeds: [embed]
-            }));
+                // Add the embed data
+                const payload = {
+                    content: `🔔 **طلب شراء جديد وصل!**\n\n**المشتري:** ${customerName}\n**المبلغ:** $${total.toLocaleString()}\n\n**يرجى مراجعة الإيصال المرفق والتواصل مع المشتري.**`,
+                    embeds: [embed]
+                };
 
-            // Send to Discord
-            const response = await fetch(DISCORD_WEBHOOK_URL, {
-                method: 'POST',
-                body: formData
-            });
+                formData.append('payload_json', JSON.stringify(payload));
 
-            if (!response.ok) {
-                throw new Error(`Discord webhook failed: ${response.status}`);
+                console.log('📤 إرسال البيانات إلى Discord...');
+
+                // Send to Discord with timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                console.log('📨 استجابة Discord:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ خطأ من Discord:', errorText);
+                    throw new Error(`Discord webhook failed: ${response.status} - ${response.statusText}`);
+                }
+
+                console.log('✅ تم إرسال الطلب بنجاح إلى Discord!');
+                return response;
+
+            } catch (error) {
+                console.error('❌ خطأ في إرسال الطلب:', error);
+
+                if (error.name === 'AbortError') {
+                    throw new Error('انتهت مهلة الإرسال. يرجى المحاولة مرة أخرى.');
+                }
+
+                throw error;
             }
-
-            return response;
         }
 
         function fileToBase64(file) {
@@ -363,7 +403,64 @@
                 reader.onerror = error => reject(error);
             });
         }
-        
+
+        // دالة لاختبار الـ webhook
+        async function testDiscordWebhook() {
+            const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1401476836071964693/U9q_Q7NwgWW--FL8ei6_akJeK_V8OJoiC8BAHrXHISHiHlzMbU0j0xB4u1qCK3T9uq3X';
+
+            try {
+                console.log('🧪 اختبار الـ webhook...');
+
+                const testPayload = {
+                    content: "🧪 **اختبار الاتصال - Nexus City Store**\n\nهذه رسالة اختبار للتأكد من عمل الـ webhook بشكل صحيح.",
+                    embeds: [{
+                        title: "🔧 اختبار النظام",
+                        color: 0x00ff00,
+                        description: "تم إرسال هذه الرسالة لاختبار الاتصال مع Discord",
+                        timestamp: new Date().toISOString(),
+                        footer: {
+                            text: "Nexus City CFW Store - Test"
+                        }
+                    }]
+                };
+
+                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testPayload)
+                });
+
+                if (response.ok) {
+                    console.log('✅ الـ webhook يعمل بشكل صحيح!');
+                    return true;
+                } else {
+                    console.error('❌ فشل اختبار الـ webhook:', response.status, response.statusText);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ خطأ في اختبار الـ webhook:', error);
+                return false;
+            }
+        }
+
+        // إضافة اختصار لوحة المفاتيح لاختبار الـ webhook (Ctrl+Shift+T)
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+                event.preventDefault();
+                if (confirm('هل تريد اختبار الـ Discord Webhook؟\n\nسيتم إرسال رسالة اختبار إلى قناة Discord.')) {
+                    testDiscordWebhook().then(success => {
+                        if (success) {
+                            alert('✅ تم اختبار الـ webhook بنجاح!\n\nتحقق من قناة Discord لرؤية رسالة الاختبار.');
+                        } else {
+                            alert('❌ فشل اختبار الـ webhook!\n\nتحقق من الكونسول للمزيد من التفاصيل.');
+                        }
+                    });
+                }
+            }
+        });
+
         function joinServer() {
             const fivemUrl = 'fivem://connect/cfx.re/join/dm5p43';
             
@@ -523,7 +620,73 @@
             }
         }
         
+        // دالة لمعالجة الصور المكسورة
+        function handleBrokenImage(img) {
+            console.log('🖼️ صورة مكسورة:', img.src);
+
+            // إنشاء صورة بديلة باستخدام Canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+
+            // خلفية متدرجة
+            const gradient = ctx.createLinearGradient(0, 0, 300, 200);
+            gradient.addColorStop(0, '#b8995f');
+            gradient.addColorStop(1, '#8b7355');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 300, 200);
+
+            // إضافة نص
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('NEXUS CITY', 150, 90);
+            ctx.font = '14px Arial';
+            ctx.fillText('صورة غير متوفرة', 150, 120);
+
+            // إضافة أيقونة
+            ctx.font = '30px Arial';
+            ctx.fillText('🏪', 150, 60);
+
+            // استبدال الصورة المكسورة
+            img.src = canvas.toDataURL();
+            img.style.objectFit = 'cover';
+        }
+
+        // دالة لإضافة معالج الصور المكسورة لجميع الصور
+        function setupImageErrorHandling() {
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                img.addEventListener('error', function() {
+                    handleBrokenImage(this);
+                });
+
+                // إضافة loading placeholder
+                img.addEventListener('load', function() {
+                    this.style.opacity = '1';
+                });
+
+                img.style.opacity = '0.7';
+                img.style.transition = 'opacity 0.3s ease';
+            });
+        }
+
         console.log('✅ All functions defined and ready!');
+
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Nexus City Store - الصفحة جاهزة');
+            console.log('🔧 للاختبار: اضغط Ctrl+Shift+T لاختبار Discord Webhook');
+            console.log('📋 معلومات النظام:');
+            console.log('  - المتصفح:', navigator.userAgent);
+            console.log('  - التاريخ:', new Date().toLocaleString('ar-SA'));
+
+            // إعداد معالجة الصور المكسورة
+            setupImageErrorHandling();
+
+            updateCartUI();
+        });
     </script>
     
     <style>
@@ -2292,7 +2455,7 @@
                             </div>
                             <div class="founder-info">
                                 <div class="founder-name">𓆩 Y A M I 𓆪</div>
-                                <div class="founder-role">Server Creator</div>
+                                <div class="founder-role">ɴᴄ |  Owner</div>
                             </div>
                         </div>
                         <div class="founder-item">
@@ -2301,16 +2464,34 @@
                             </div>
                             <div class="founder-info">
                                 <div class="founder-name">𝟢𝗓𝖾𝗑</div>
-                                <div class="founder-role">Owner</div>
+                                <div class="founder-role">ɴᴄ |  Owner</div>
                             </div>
                         </div>
                         <div class="founder-item">
+                            <div class="founder-avatar">
+                                <img src="https://cdn.discordapp.com/attachments/1393330093727809590/1401476154849886228/a1f2a202829c152b3d7623b278d13829.png" alt="ALmhri Avatar">
+                            </div>
+                            <div class="founder-info">
+                                <div class="founder-name">𝐴𝑙𝑠ℎ𝑎𝑚𝑠𝑖</div>
+                                <div class="founder-role">ɴᴄ | Founder</div>
+                            </div>
+                        </div>
+                          <div class="founder-item">
+                            <div class="founder-avatar">
+                                <img src="https://cdn.discordapp.com/attachments/1393330093727809590/1401328818500931584/a_5325bcfa9a81f509f794a5aedf6c8750.png" alt="ALmhri Avatar">
+                            </div>
+                            <div class="founder-info">
+                                <div class="founder-name">0lod ↯</div>
+                                <div class="founder-role">ɴᴄ |  Ceo</div>
+                            </div>
+                        </div>
+                          <div class="founder-item">
                             <div class="founder-avatar">
                                 <img src="https://cdn.discordapp.com/avatars/928907187848351756/fed61f959c8fc4a7ca2389efbdaec5b9.webp?size=128" alt="ALmhri Avatar">
                             </div>
                             <div class="founder-info">
                                 <div class="founder-name">ALmhri</div>
-                                <div class="founder-role">Co Owner</div>
+                                <div class="founder-role">ɴᴄ | Supervisor</div>
                             </div>
                         </div>
                         <div class="founder-item">
@@ -2342,7 +2523,7 @@
                             <div class="stat-label">لاعب</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">15</div>
+                            <div class="stat-number">20</div>
                             <div class="stat-label">إداري</div>
                         </div>
                         <div class="stat-item">
@@ -2809,7 +2990,7 @@
             <div class="product-grid">
                 <div class="product-card">
                     <div class="product-card-image">
-                        <img src="https://cdn.discordapp.com/attachments/1397540492610109471/1400837667612000428/Snrbuns.png?ex=688e173e&is=688cc5be&hm=43b9689c815c499035ab488b7131aae463cac551dcb2e04d3e8626caf5f651e0&" alt="Snr.Buns" class="car-image">
+                        <img src="https://i.snipboard.io/j8WtJh.jpg" alt="Snr.Buns" class="car-image">
                     </div>
                     <div class="product-card-content">
                         <h3 class="product-title">Snr.Buns</h3>
@@ -2821,7 +3002,7 @@
                 
                 <div class="product-card">
                     <div class="product-card-image">
-                        <img src="https://cdn.discordapp.com/attachments/1397540492610109471/1400840867761356920/WeaponStore.png?ex=688e1a39&is=688cc8b9&hm=3650e648a8f2de9dbea610fc427e8b059cd15fe9993d4bc41a4007686c5f2e20&" alt="Weapon Store" class="car-image">
+                        <img src="https://i.snipboard.io/0Zzy3F.jpg" alt="Weapon Store" class="car-image">
                     </div>
                     <div class="product-card-content">
                         <h3 class="product-title">Weapon Store</h3>
@@ -2846,7 +3027,7 @@
             <div class="product-grid">
                 <div class="product-card">
                     <div class="product-card-image">
-                        <img src="https://cdn.discordapp.com/attachments/1397540492610109471/1400826196345753611/weapon1.png?ex=688e0c8f&is=688cbb0f&hm=86a628085ad11f83bcf8c391ad7065507d906eb2449eefc24b025695b25b8560&" alt="Weapon Pack" class="car-image">
+                        <img src="https://i.snipboard.io/9ZHyRF.jpg" alt="Weapon Pack" class="car-image">
                     </div>
                     <div class="product-card-content">
                         <div class="product-icon">🛒</div>
@@ -2859,7 +3040,7 @@
                 
                 <div class="product-card">
                     <div class="product-card-image">
-                        <img src="https://cdn.discordapp.com/attachments/1397540492610109471/1400834774376911018/weapon2.png?ex=688e148c&is=688cc30c&hm=864b68dc050545c8236bf6490c07f1ea6cdc97ccd66e4ecbd0b3fae8bb4cf6f2&" alt="Weapon Pack 1" class="car-image">
+                        <img src="https://i.snipboard.io/zvSTra.jpg" alt="Weapon Pack 1" class="car-image">
                     </div>
                     <div class="product-card-content">
                         <div class="product-icon">🛒</div>
@@ -2878,5 +3059,6 @@
 </body>
 
 </html>
+
 
 
