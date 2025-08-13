@@ -462,15 +462,15 @@
         });
 
         function joinServer() {
-            const fivemUrl = 'fivem://connect/cfx.re/join/qekvm9';
+            const fivemUrl = 'fivem://connect/cfx.re/join/3z6koz';
             
             try {
                 window.location.href = fivemUrl;
                 setTimeout(() => {
-                    alert('تم إرسال طلب الاتصال إلى FiveM! إذا لم يفتح FiveM تلقائياً، انسخ الرابط: cfx.re/join/qekvm9');
+                    alert('تم إرسال طلب الاتصال إلى FiveM! إذا لم يفتح FiveM تلقائياً، انسخ الرابط: cfx.re/join/3z6koz');
                 }, 1000);
             } catch (error) {
-                window.open('https://cfx.re/join/qekvm9', '_blank');
+                window.open('https://cfx.re/join/3z6koz', '_blank');
             }
         }
         
@@ -576,7 +576,7 @@
                 connectionStatusElement.textContent = 'جاري الاتصال...';
                 
                 // Try to fetch from FiveM API
-                const response = await fetch('https://servers-frontend.fivem.net/api/servers/single/qekvm9');
+                const response = await fetch('https://servers-frontend.fivem.net/api/servers/single/3z6koz');
                 
                 if (response.ok) {
                     const serverData = await response.json();
@@ -2908,11 +2908,11 @@
                         <div class="connection-details">
                             <div class="connection-item">
                                 <span class="connection-label">رابط الدخول:</span>
-                                <code class="connection-code" onclick="copyToClipboard('cfx.re/join/qekvm9')" title="انقر للنسخ">cfx.re/join/qekvm9</code>
+                                <code class="connection-code" onclick="copyToClipboard('cfx.re/join/3z6koz')" title="انقر للنسخ">cfx.re/join/3z6koz</code>
                             </div>
                             <div class="connection-item">
                                 <span class="connection-label">رمز السيرفر:</span>
-                                <code class="connection-code" onclick="copyToClipboard('qekvm9')" title="انقر للنسخ">qekvm9</code>
+                                <code class="connection-code" onclick="copyToClipboard('3z6koz')" title="انقر للنسخ">3z6koz</code>
                             </div>
                         </div>
                     </div>
@@ -3071,6 +3071,7 @@
 </body>
 
 </html>
+
 
 
 
